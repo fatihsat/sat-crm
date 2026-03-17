@@ -173,7 +173,7 @@ input, select, textarea, button { font-family: inherit; }
 const SUPABASE_URL = "https://rzgeknrwvjxlnvscnebg.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6Z2VrbnJ3dmp4bG52c2NuZWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjExMDUsImV4cCI6MjA4OTI5NzEwNX0.qf1BNaJGsPq0dk7t2DMZk4PTGoJN8M7UbQaYLlnb3vM";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const TABLE = "crm_data";
 
 // ═══════════════════════════════════════════════════════════
@@ -992,7 +992,7 @@ let authMode = "login"; // "login" or "signup"
 // ═══════════════════════════════════════════════════════════
 async function dbGet(key) {
   try {
-    const { data, error } = await supabase.from(TABLE).select("value").eq("key", key).eq("user_id", currentUser.id).maybeSingle();
+    const { data, error } = await sb.from(TABLE).select("value").eq("key", key).eq("user_id", currentUser.id).maybeSingle();
     if (error) throw error;
     return data ? JSON.parse(data.value) : null;
   } catch(e) { console.error("dbGet:", e); return null; }
@@ -1000,7 +1000,7 @@ async function dbGet(key) {
 
 async function dbSet(key, value) {
   try {
-    const { error } = await supabase.from(TABLE).upsert({
+    const { error } = await sb.from(TABLE).upsert({
       key, user_id: currentUser.id, value: JSON.stringify(value), updated_at: new Date().toISOString()
     }, { onConflict: "key,user_id" });
     if (error) throw error;
@@ -1156,7 +1156,7 @@ async function handleAuth() {
   try {
     let result;
     if (authMode === "signup") {
-      result = await supabase.auth.signUp({ email, password });
+      result = await sb.auth.signUp({ email, password });
       if (result.error) throw result.error;
       if (result.data.user && !result.data.session) {
         errEl.style.color = "#22c55e";
@@ -1165,7 +1165,7 @@ async function handleAuth() {
         return;
       }
     } else {
-      result = await supabase.auth.signInWithPassword({ email, password });
+      result = await sb.auth.signInWithPassword({ email, password });
       if (result.error) throw result.error;
     }
     currentUser = result.data.user;
@@ -1180,7 +1180,7 @@ async function handleAuth() {
 }
 
 async function logout() {
-  await supabase.auth.signOut();
+  await sb.auth.signOut();
   currentUser = null;
   CRM = {}; STATS = {};
   renderAuthScreen();
@@ -1322,7 +1322,7 @@ function render() {
 // ═══════════════════════════════════════════════════════════
 (async function init() {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await sb.auth.getSession();
     if (session && session.user) {
       currentUser = session.user;
       await loadData();
